@@ -1,6 +1,6 @@
-# Telegram Bot Panel
+# Python Bot Panel
 
-A lightweight PHP web panel for hosting and managing Python Telegram bots on **shared cPanel hosts that don't provide SSH / terminal access**.
+A lightweight PHP web panel for hosting and managing Python bots and scripts (Telegram, Discord, Bale, or any long-running Python script) on **shared cPanel hosts that don't provide SSH / terminal access**.
 
 Upload the panel to your host, open it in the browser, and you get a file manager, bot process control, live logs and a web terminal — no SSH needed.
 

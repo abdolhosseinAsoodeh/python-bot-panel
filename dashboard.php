@@ -14,7 +14,7 @@ $pythonFile = findPythonFile($selected);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Telegram Bot Panel</title>
+    <title>Python Bot Panel</title>
     <link rel="stylesheet" href="views/style.css">
 </head>
 <body>

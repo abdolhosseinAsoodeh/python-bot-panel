@@ -1,5 +1,5 @@
 <?php
-// Telegram Bot Management Panel - Configuration
+// Python Bot Management Panel - Configuration
 
 if (!defined('BASE_DIR')) {
     define('BASE_DIR', __DIR__);

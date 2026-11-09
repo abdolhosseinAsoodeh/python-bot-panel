@@ -3,7 +3,7 @@ import sys
 import subprocess
 import signal
 
-# Telegram Bot Launcher
+# Python Bot Launcher
 # Usage: python launcher.py <project_dir> <script_path> <log_path> <pid_path> [python_exe]
 
 if len(sys.argv) < 5:

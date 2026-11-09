@@ -31,7 +31,7 @@ ensureProject($project);
         </div>
 
         <div class="terminal" id="terminal-window">
-            <div id="terminal-output">Telegram Bot Panel Terminal
+            <div id="terminal-output">Python Bot Panel Terminal
 Project: <?= htmlspecialchars($project) ?>
 OS: <?= PHP_OS ?>
 Python: <?= htmlspecialchars(PYTHON_COMMAND) ?>
