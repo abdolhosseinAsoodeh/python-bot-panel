@@ -1,0 +1,21 @@
+# Runtime data: uploaded bots, logs, PID files (may contain bot tokens)
+/storage/
+
+# Environment / secrets
+.env
+*.env
+config.local.php
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
