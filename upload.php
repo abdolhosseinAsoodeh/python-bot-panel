@@ -34,8 +34,11 @@ for ($i = 0; $i < $count; $i++) {
 
     $target = $directory . DIRECTORY_SEPARATOR . $name;
     if (file_exists($target)) {
-        $target = $directory . DIRECTORY_SEPARATOR .
-            pathinfo($name, PATHINFO_FILENAME) . '_' . time() . '.' . $ext;
+        // ".env" -> ".env_123", "Dockerfile" -> "Dockerfile_123", "main.py" -> "main_123.py"
+        $stem = pathinfo($name, PATHINFO_FILENAME);
+        $suffix = '_' . time();
+        $newName = ($stem === '' || $ext === '') ? $name . $suffix : $stem . $suffix . '.' . $ext;
+        $target = $directory . DIRECTORY_SEPARATOR . $newName;
     }
 
     if (move_uploaded_file($files['tmp_name'][$i], $target)) {

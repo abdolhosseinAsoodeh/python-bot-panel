@@ -31,14 +31,20 @@ function cleanName(string $name): string
 {
     $name = basename($name);
     $name = preg_replace('/[^\p{L}\p{N}\._\- ]/u', '_', $name);
-    $name = trim($name, '. ');
-    return $name !== '' ? $name : 'item';
+    // Keep a leading dot so dotfiles like ".env" or ".gitignore" survive;
+    // only strip surrounding spaces and trailing dots (invalid on Windows).
+    $name = rtrim(trim($name), '. ');
+    if ($name === '' || trim($name, '.') === '') {
+        return 'item';
+    }
+    return $name;
 }
 
 function projectName(): string
 {
     $project = $_GET['project'] ?? $_POST['project'] ?? 'default';
-    $project = cleanName((string)$project);
+    // Project folders must not be hidden, so drop leading dots here.
+    $project = ltrim(cleanName((string)$project), '.');
     return $project !== '' ? $project : 'default';
 }
 
@@ -151,7 +157,14 @@ function isTextFile(string $file): bool
         'xml', 'yaml', 'yml', 'ini', 'env', 'md', 'sql', 'sh', 'bat', 'cmd',
         'log', 'csv', 'conf', 'toml', 'cfg', 'dockerfile', 'gitignore'
     ];
-    return in_array($extension, $extensions, true);
+    if (in_array($extension, $extensions, true)) {
+        return true;
+    }
+
+    // Common text files without a usual extension: .env.local, Dockerfile, Procfile, ...
+    $base = strtolower(basename($file));
+    $names = ['dockerfile', 'procfile', 'makefile', 'license', 'readme', '.htaccess', '.gitignore', '.dockerignore', '.editorconfig'];
+    return in_array($base, $names, true) || strpos($base, '.env') === 0;
 }
 
 function deleteDirectory(string $dir): bool

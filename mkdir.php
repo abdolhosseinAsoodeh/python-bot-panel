@@ -7,6 +7,11 @@ $isProject = !empty($_POST['is_project']);
 $name = cleanName($_POST['name'] ?? '');
 
 if ($isProject) {
+    // Project folders must not be hidden.
+    $name = ltrim($name, '.');
+    if ($name === '') {
+        $name = 'default';
+    }
     if ($name !== '') {
         ensureProject($name);
     }
