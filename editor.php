@@ -27,50 +27,125 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 } else {
     $content = file_get_contents($path);
 }
+
+// CodeMirror mode per extension: [mode spec, required mode files]
+$ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+$modes = [
+    'py' => ['python', ['python']],
+    'js' => ['javascript', ['javascript']],
+    'ts' => ['text/typescript', ['javascript']],
+    'json' => ['application/json', ['javascript']],
+    'php' => ['application/x-httpd-php', ['xml', 'javascript', 'css', 'htmlmixed', 'clike', 'php']],
+    'html' => ['htmlmixed', ['xml', 'javascript', 'css', 'htmlmixed']],
+    'htm' => ['htmlmixed', ['xml', 'javascript', 'css', 'htmlmixed']],
+    'css' => ['css', ['css']],
+    'scss' => ['text/x-scss', ['css']],
+    'xml' => ['xml', ['xml']],
+    'sh' => ['shell', ['shell']],
+    'yaml' => ['yaml', ['yaml']],
+    'yml' => ['yaml', ['yaml']],
+    'md' => ['markdown', ['markdown']],
+    'sql' => ['sql', ['sql']],
+    'toml' => ['toml', ['toml']],
+    'ini' => ['properties', ['properties']],
+    'env' => ['properties', ['properties']],
+    'cfg' => ['properties', ['properties']],
+    'conf' => ['properties', ['properties']],
+];
+[$mode, $modeFiles] = $modes[$ext] ?? ['null', []];
+$cm = 'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16';
+
+$dir = dirname($file) === '.' ? '' : dirname($file);
+$backUrl = 'files.php?project=' . urlencode($project) . '&path=' . urlencode($dir);
+
+renderHeader(basename($path), 'files', $project);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Edit <?= htmlspecialchars(basename($path)) ?></title>
-    <link rel="stylesheet" href="views/style.css">
-</head>
-<body>
-<div class="layout">
-    <aside class="sidebar">
-        <div class="logo">🤖 Bot Panel</div>
-        <a class="menu" href="dashboard.php?project=<?= urlencode($project) ?>">🏠 Dashboard</a>
-        <a class="menu active" href="files.php?project=<?= urlencode($project) ?>">📁 Files</a>
-        <a class="menu" href="terminal.php?project=<?= urlencode($project) ?>">🖥 Terminal</a>
-        <a class="menu" href="logs.php?project=<?= urlencode($project) ?>">📜 Logs</a>
-    </aside>
+        <link rel="stylesheet" href="<?= $cm ?>/codemirror.min.css">
 
-    <main class="content">
-        <div class="topbar">
-            <h1>✏️ <?= htmlspecialchars($file) ?></h1>
-            <a class="btn" href="files.php?project=<?= urlencode($project) ?>&path=<?= urlencode(dirname($file) === '.' ? '' : dirname($file)) ?>">
-                ← Back to Files
-            </a>
-        </div>
-
-        <?php if ($saved): ?>
-            <div class="alert success-alert">
-                File saved successfully.
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Edit file</h1>
+                <div class="page-sub mono"><?= e($project) ?>/<?= e($file) ?></div>
             </div>
-        <?php endif; ?>
-
-        <div class="editor-panel">
-            <form method="post">
-                <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
-                <textarea name="content" class="code-editor" spellcheck="false"><?= htmlspecialchars($content) ?></textarea>
-                <div style="margin-top:15px; display:flex; gap:10px;">
-                    <button class="btn success" type="submit">💾 Save File</button>
-                    <a class="btn" href="files.php?project=<?= urlencode($project) ?>">Cancel</a>
-                </div>
-            </form>
+            <div class="page-actions">
+                <a class="btn btn-ghost" href="<?= e($backUrl) ?>"><?= icon('arrow-left', 16) ?> Back</a>
+                <a class="btn" href="download.php?project=<?= urlencode($project) ?>&file=<?= urlencode($file) ?>"><?= icon('download', 16) ?> Download</a>
+                <button class="btn btn-primary" type="submit" form="editor-form"><?= icon('save', 16) ?> Save</button>
+            </div>
         </div>
-    </main>
-</div>
-</body>
-</html>
+
+        <form method="post" id="editor-form">
+            <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+            <div class="editor-shell" id="editor-shell">
+                <div class="editor-bar">
+                    <span class="file-tab"><?= fileIcon(basename($path), false) ?> <?= e(basename($path)) ?> <span class="dirty-dot" title="Unsaved changes"></span></span>
+                    <span><span id="cursor-pos">Ln 1, Col 1</span> · <?= e(strtoupper($ext)) ?> · <kbd>Ctrl</kbd>+<kbd>S</kbd> to save</span>
+                </div>
+                <textarea name="content" id="code" class="code-editor" spellcheck="false"><?= e($content) ?></textarea>
+            </div>
+        </form>
+
+<script src="<?= $cm ?>/codemirror.min.js"></script>
+<?php foreach ($modeFiles as $m): ?>
+<script src="<?= $cm ?>/mode/<?= $m ?>/<?= $m ?>.min.js"></script>
+<?php endforeach; ?>
+<script src="<?= $cm ?>/addon/selection/active-line.min.js"></script>
+<script src="<?= $cm ?>/addon/edit/matchbrackets.min.js"></script>
+<script src="<?= $cm ?>/addon/edit/closebrackets.min.js"></script>
+<script>
+(function () {
+    var form = document.getElementById('editor-form');
+    var shell = document.getElementById('editor-shell');
+    var textarea = document.getElementById('code');
+    var pos = document.getElementById('cursor-pos');
+    var dirty = false;
+    var editor = null;
+
+    function setDirty(v) { dirty = v; shell.classList.toggle('dirty', v); }
+
+    if (window.CodeMirror) {
+        editor = CodeMirror.fromTextArea(textarea, {
+            mode: <?= json_encode($mode) ?>,
+            lineNumbers: true,
+            indentUnit: 4,
+            tabSize: 4,
+            indentWithTabs: false,
+            styleActiveLine: true,
+            matchBrackets: true,
+            autoCloseBrackets: true,
+            lineWrapping: false,
+            extraKeys: {
+                Tab: function (cm) {
+                    if (cm.somethingSelected()) cm.indentSelection('add');
+                    else cm.replaceSelection(Array(cm.getOption('indentUnit') + 1).join(' '), 'end');
+                },
+                'Shift-Tab': function (cm) { cm.indentSelection('subtract'); }
+            }
+        });
+        editor.on('change', function () { setDirty(true); });
+        editor.on('cursorActivity', function () {
+            var c = editor.getCursor();
+            pos.textContent = 'Ln ' + (c.line + 1) + ', Col ' + (c.ch + 1);
+        });
+        editor.focus();
+    } else {
+        textarea.addEventListener('input', function () { setDirty(true); });
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            if (editor) editor.save();
+            setDirty(false);
+            form.submit();
+        }
+    });
+    form.addEventListener('submit', function () { setDirty(false); });
+    window.addEventListener('beforeunload', function (e) {
+        if (dirty) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    <?php if ($saved): ?>document.addEventListener('DOMContentLoaded', function () { toast('File saved'); });<?php endif; ?>
+})();
+</script>
+<?php renderFooter(); ?>

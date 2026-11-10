@@ -74,11 +74,13 @@ $descriptors = [
     2 => ['pipe', 'w'],
 ];
 
-$processCommand = isWindows()
-    ? ['cmd', '/c', $command]
-    : ['/bin/sh', '-c', $command];
-
-$process = @proc_open($processCommand, $descriptors, $pipes, $directory);
+// On Windows an argv array gets re-quoted as a single word, so cmd.exe would
+// treat the whole line as one program name. Pass a raw command string instead.
+if (isWindows()) {
+    $process = @proc_open('cmd /s /c "' . $command . '"', $descriptors, $pipes, $directory, null, ['bypass_shell' => true]);
+} else {
+    $process = @proc_open(['/bin/sh', '-c', $command], $descriptors, $pipes, $directory);
+}
 if (!is_resource($process)) {
     @chdir($oldDirectory);
     http_response_code(500);

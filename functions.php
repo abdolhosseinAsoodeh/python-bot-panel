@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/views/layout.php';
 
 // Cross-Platform OS check
 function isWindows(): bool
@@ -276,6 +277,46 @@ function stopBotProcess(string $project): bool
         @unlink($pidFile);
     }
     return true;
+}
+
+function botStartedAt(string $project): ?int
+{
+    $pidFile = getPidFile($project);
+    return file_exists($pidFile) ? (int)filemtime($pidFile) : null;
+}
+
+function projectStats(string $project): array
+{
+    $stats = ['files' => 0, 'size' => 0];
+    $base = projectPath($project);
+    if (!is_dir($base)) {
+        return $stats;
+    }
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($base, RecursiveDirectoryIterator::SKIP_DOTS)
+    );
+    foreach ($iterator as $item) {
+        if ($item->isFile()) {
+            $stats['files']++;
+            $stats['size'] += $item->getSize();
+        }
+    }
+    return $stats;
+}
+
+function tailFile(string $file, int $lines = 20): string
+{
+    if (!is_file($file) || filesize($file) === 0) {
+        return '';
+    }
+    $fp = fopen($file, 'rb');
+    $size = filesize($file);
+    $chunk = min($size, 64 * 1024);
+    fseek($fp, -$chunk, SEEK_END);
+    $data = fread($fp, $chunk);
+    fclose($fp);
+    $all = preg_split('/\r\n|\n|\r/', rtrim($data));
+    return implode("\n", array_slice($all, -$lines));
 }
 
 function findAllPythonFiles(string $project): array

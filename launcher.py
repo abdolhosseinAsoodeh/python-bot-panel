@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import signal
+from datetime import datetime
 
 # Python Bot Launcher
 # Usage: python launcher.py <project_dir> <script_path> <log_path> <pid_path> [python_exe]
@@ -21,7 +22,7 @@ os.makedirs(os.path.dirname(log_path), exist_ok=True)
 os.makedirs(os.path.dirname(pid_path), exist_ok=True)
 
 with open(log_path, "a", encoding="utf-8", buffering=1) as log:
-    log.write(f"\n=== Bot starting at {os.environ.get('START_TIME', '')} ===\n")
+    log.write(f"\n=== Bot starting at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===\n")
     log.write(f"Project: {project_dir}\nScript: {script_path}\nInterpreter: {python_exe}\n")
 
     popen_kwargs = {
