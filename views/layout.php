@@ -2,7 +2,7 @@
 // Shared layout: icons, page shell (sidebar + header) and footer.
 
 const APP_NAME = 'Bot Panel';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 function e($value): string
 {
